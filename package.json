@@ -1,0 +1,36 @@
+{
+  "name": "kwitter_server",
+  "version": "1.0.0",
+  "description": "test server",
+  "main": "index.js",
+  "scripts": {
+    "test": "test",
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xogud0930/test_server.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xogud0930/test_server/issues"
+  },
+  "homepage": "https://github.com/xogud0930/test_server#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "express-session": "^1.17.1",
+    "passport": "^0.4.1",
+    "passport-local": "^1.0.0"
+  },
+  "engines": {
+    "node": "15.13.0",
+    "npm": "7.7.6"
+  },
+  "devDependencies": {
+    "mongoose": "^5.12.8",
+    "nodemon": "^2.0.7"
+  }
+}
