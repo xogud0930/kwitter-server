@@ -1,7 +1,7 @@
 const express = require('express')
 const cors = require('cors');
 const app = express()
-const port = 6050
+const port = process.env.PORT || 6050;
 
 const bodyParser = require('body-parser')
 const { User } = require('./models/User')
