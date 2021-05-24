@@ -4,8 +4,6 @@ const app = express()
 const port = process.env.PORT || 6050;
 
 const bodyParser = require('body-parser')
-const User = require('./models/User')
-const { Post } = require('./models/Post')
 
 app.use(cors());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -19,29 +17,6 @@ try {
 } catch (err) {
     throw err
 }
-
-// mySql.getConnection( function( err, connection ) 
-// {  
-//     if ( err ) 
-//         throw err;
-//     else 
-//     {
-//         // var sql = `INSERT INTO test(test)VALUES(?)`
-//         // var param = [
-//         //     'abc'
-//         // ]
-//         var sql = `SELECT * FROM test`
-//         //var sql = `UPDATE test SET test = 'a' WHERE id = 1`
-//         connection.query(sql, (err, results) => {
-//             if (err) 
-//                 throw err;
-//             else 
-//                 console.log('MySql connected...');
-//         });
-//         // 커넥션 반환 ( 커넥션 종료 메소드가 커넥션과 다르다 )
-//         connection.release() 
-//     }
-// });
 
 app.post('/api/register', async (req, res) => {
     const response = {
