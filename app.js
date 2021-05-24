@@ -4,21 +4,51 @@ const app = express()
 const port = process.env.PORT || 6050;
 
 const bodyParser = require('body-parser')
-const { User } = require('./models/User')
+const User = require('./models/User')
 const { Post } = require('./models/Post')
 
 app.use(cors());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
-const mongoose = require('mongoose')
-mongoose.connect('mongodb+srv://th-gwon:dwYujvcRramyDIGf@realmcluster.qdpm4.mongodb.net/myFirstDatabase?retryWrites=true&w=majority', {
-    useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false
-}).then(() => console.log('MongoDB connected...'))
-.catch(error => console.log(error))
+const mySql = require('./src/dbConfig')
 
-app.post('/api/register', (req, res) => {
-    const user = new User(req.body)
+try {
+    const data = mySql.query(`SELECT * FROM test`)
+    console.log('MySql connected...');
+} catch (err) {
+    throw err
+}
+
+// mySql.getConnection( function( err, connection ) 
+// {  
+//     if ( err ) 
+//         throw err;
+//     else 
+//     {
+//         // var sql = `INSERT INTO test(test)VALUES(?)`
+//         // var param = [
+//         //     'abc'
+//         // ]
+//         var sql = `SELECT * FROM test`
+//         //var sql = `UPDATE test SET test = 'a' WHERE id = 1`
+//         connection.query(sql, (err, results) => {
+//             if (err) 
+//                 throw err;
+//             else 
+//                 console.log('MySql connected...');
+//         });
+//         // 커넥션 반환 ( 커넥션 종료 메소드가 커넥션과 다르다 )
+//         connection.release() 
+//     }
+// });
+
+app.post('/api/register', async (req, res) => {
+    const response = {
+        success: false,
+        error: '',
+    }
+    const user = {...req.body}
 
     var data = {
         nameCheck: false,
@@ -39,80 +69,117 @@ app.post('/api/register', (req, res) => {
         }
     }
 
-    User.findOne({ "userId": user.userId }, (err, id) => {
-        if (err) return res.json(err)
-        if (!id & user.userId != "") {
-            data.idCheck = true
-        } else {
-            data.idCheck = false
-        }
+    try {
+        const [result] = await mySql.query(`SELECT * FROM USER WHERE userId = ?`, user.userId)
+        if(result == "") data.idCheck = true
+    } catch (err) {
+        response.error = err
+    }
 
-        if(data.check) {
-            user.save((error, userInfo) => {
-                if(error) return res.json({success: false, error})
-                return res.status(200).json({
-                    success: true, ...data
-                })
-            })
-        } else {
-            return res.status(200).json({
-                success: false, ...data
-            })
+    if(data.check) {
+        var sql = `INSERT INTO user(name, email, userId, password, passwordCheck)VALUES(?, ?, ?, ?, ?)`;
+        var param = [
+            user.name, user.email, user.userId, user.password, user.passwordCheck
+        ]
+        try {
+            response.success = true
+            const [result] = await mySql.query(sql, param)
+        } catch (err) {
+            response.success = false
+            response.error = err
         }
+    }
+
+    return res.status(200).json({
+        ...response, ...data
     })
 })
 
-app.post('/api/login', (req, res) => {
-    const user = new User(req.body)
+app.post('/api/login', async (req, res) => {
+    const response = {
+        success: false,
+        error: '',
+    }
+    const user = {...req.body}
 
     var data = {
         idCheck: false,
         pwCheck: false,
     }
 
-    User.findOne({ "userId": user.userId }, (err, result) => {
-        if (err) return res.json(err)
-        if (result) {
-            data.idCheck = user.userId == result.userId
-            data.pwCheck = user.password == result.password
-            return res.status(200).json({ success: true, ...data, result })
-        } else {
-            return res.status(200).json({ success: false })
-        }
+    try {
+        const [result] = await mySql.query(`SELECT * FROM USER WHERE userId = ?`, user.userId)
+        response.success = true
+        data.idCheck = user.userId == result[0].userId
+        data.pwCheck = user.password == result[0].password
+    } catch (err) {
+        response.success = false
+        response.error = err
+    }
+
+    return res.status(200).json({
+        ...response, ...data
     })
 })
 
-app.get('/api/post', (req, res) => {
-    Post.find({  }, (err,posts) => {
-        if (err) return res.json(err)
-        if (posts) {
-            return res.status(200).json({ success: true, posts })
-        } else {
-            return res.status(200).json({ success: false })
-        }
+app.get('/api/post', async (req, res) => {
+    const response = {
+        success: false,
+        error: '',
+    }
+    var posts;
+
+    try {
+        const [result] = await mySql.query(`SELECT * FROM post`)
+        response.success = true
+        posts = {...result}
+    } catch (err) {
+        response.success = false
+        response.error = err
+    }
+
+    return res.status(200).json({ ...response, posts })
+})
+
+app.post('/api/post/add', async (req, res) => {
+    const response = {
+        success: false,
+        error: '',
+    }
+    const post = {...req.body}
+
+    var sql = `INSERT INTO post(userId, body, time)VALUES(?, ?, ?)`;
+    var param = [
+        post.userId, post.body, post.time
+    ]
+    try {
+        const [result] = await mySql.query(sql, param)
+        response.success = true;
+    } catch (err) {
+        response.success = false
+        response.error = err
+    }
+    
+    return res.status(200).json({
+        ...response
     })
 })
 
-app.post('/api/post/add', (req, res) => {
-    const post = new Post(req.body)
+app.post('/api/post/del', async (req, res) => {
+    const response = {
+        success: false,
+        error: '',
+    }
 
-    post.save((error, data) => {
-        if(error) return res.json({success: false, error})
-        return res.status(200).json({
-            success: true
-        })
-    })
-})
+    try {
+        const [result] = await mySql.query(`DELETE FROM post WHERE id = ?`, req.body.id)
+        response.success = true
+    } catch (err) {
+        response.success = false
+        response.error = err
+    }
 
-app.post('/api/post/del', (req, res) => {
-    Post.remove({ "_id": req.body._id }, (err, result) => {
-        if (err) return res.json(err)
-        if (result) {
-            return res.status(200).json({ success: true })
-        } else {
-            return res.status(200).json({ success: false })
-        }
-    })
+    return res.status(200).json({ response })
 })
 
 app.get('/', (req, res) => res.send('Main'))
